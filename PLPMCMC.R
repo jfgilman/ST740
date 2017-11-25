@@ -55,7 +55,7 @@ PLPMCMC <- function(data, samples = 5000, shapePriorA = .001,
     lp <- 0
     
     for(k in 6:length(parm)){
-      
+
       lp <- lp + 
         logPLPSumCPP(d[[k-5]]$totalMiles[which(d[[k-5]]$Censor == 0 & d[[k-5]]$Phase == 1 & d[[k-5]]$trun == F)], parm[3], parm[k]) +
         logPLPSumCPP(d[[k-5]]$totalMiles[which(d[[k-5]]$Censor == 0 & d[[k-5]]$Phase == 2 & d[[k-5]]$trun == F)], parm[3], parm[k]*parm[4]) +
@@ -68,7 +68,6 @@ PLPMCMC <- function(data, samples = 5000, shapePriorA = .001,
         logPLPInterval(d[[k-5]]$Lower[which(d[[k-5]]$Phase == 3 & d[[k-5]]$trun == T)], d[[k-5]]$Upper[which(d[[k-5]]$Phase == 3 & d[[k-5]]$trun == T)], parm[3], parm[k]*parm[4]*parm[5]) +
         dgamma(parm[k], parm[1], parm[2], log=T)
     }
-    
     lp <- lp + 
       dgamma(parm[1], hyperA1, hyperA2, log=T) + 
       dgamma(parm[2],HyperG1, HyperG2, log=T) +
@@ -92,9 +91,9 @@ PLPMCMC <- function(data, samples = 5000, shapePriorA = .001,
     
     for(j in 6:ncol(draws)){
       draws[i,j] <- rgamma(1,sum(data[[j-5]]$Censor == 0)+draws[i-1,1],
-                           sum(data[[j-5]]$totalMiles[which(data[[j-5]]$Phase == 1 & data[[j-5]]$trun == F)]^draws[i-1,3],
-                               (draws[i-1,4] * data[[j-5]]$totalMiles[which(data[[j-5]]$Phase == 2 & data[[j-5]]$trun == F)]^draws[i-1,3]),
-                               (draws[i-1,4] * draws[i-1,5] * data[[j-5]]$totalMiles[which(data[[j-5]]$Phase == 3 & data[[j-5]]$trun == F)]^draws[i-1,3])) +
+                           sum(data[[j-5]]$totalMiles[which(data[[j-5]]$Phase == 1 & data[[j-5]]$Censor == 1 & data[[j-5]]$trun == F)]^draws[i-1,3],
+                               (draws[i-1,4] * data[[j-5]]$totalMiles[which(data[[j-5]]$Phase == 2 & data[[j-5]]$Censor == 1 & data[[j-5]]$trun == F)]^draws[i-1,3]),
+                               (draws[i-1,4] * draws[i-1,5] * data[[j-5]]$totalMiles[which(data[[j-5]]$Phase == 3 & data[[j-5]]$Censor == 1 & data[[j-5]]$trun == F)]^draws[i-1,3])) +
                              sum(data[[j-5]]$Upper[which(data[[j-5]]$Phase == 1 & data[[j-5]]$trun == T)]^draws[i-1,3] - 
                                    data[[j-5]]$Lower[which(data[[j-5]]$Phase == 1 & data[[j-5]]$trun == T)]^draws[i-1,3],
                                  draws[i-1,4] * (data[[j-5]]$Upper[which(data[[j-5]]$Phase == 2 & data[[j-5]]$trun == T)]^draws[i-1,3] - 
@@ -103,26 +102,28 @@ PLPMCMC <- function(data, samples = 5000, shapePriorA = .001,
                                    data[[j-5]]$Lower[which(data[[j-5]]$Phase == 3 & data[[j-5]]$trun == T)]^draws[i-1,3]))  
                            + draws[i-1,2])
     }
-    
+
     draws[i,2] <- rgamma(1, length(data)*draws[i-1,1] + HyperG1,
                          sum(draws[i,6:ncol(draws)]) + HyperG2)
+    
+    
     
     # Phase sums
     phase2Sum <- 0
     phase3Sum4 <- 0
     phase3Sum5 <- 0
     for(k in 1:length(data)){
-      phase2Sum <- phase2Sum + draws[i,k+5] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 2 & data[[k]]$trun == F)]^draws[i-1,3],
+      phase2Sum <- phase2Sum + draws[i,k+5] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 2 & data[[k]]$Censor == 1 & data[[k]]$trun == F)]^draws[i-1,3],
                                                   data[[k]]$Upper[which(data[[k]]$Phase == 2 & data[[k]]$trun == T)]^draws[i-1,3] -
                                                     data[[k]]$Lower[which(data[[k]]$Phase == 2 & data[[k]]$trun == T)]^draws[i-1,3])
       
       # for the first theta
-      phase3Sum4 <- phase3Sum4 + draws[i,k+5] * draws[i-1,5] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 3 & data[[k]]$trun == F)]^draws[i-1,3],
+      phase3Sum4 <- phase3Sum4 + draws[i,k+5] * draws[i-1,5] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 3 & data[[k]]$Censor == 1 & data[[k]]$trun == F)]^draws[i-1,3],
                                                                    data[[k]]$Upper[which(data[[k]]$Phase == 3 & data[[k]]$trun == T)]^draws[i-1,3] -
                                                                      data[[k]]$Lower[which(data[[k]]$Phase == 3 & data[[k]]$trun == T)]^draws[i-1,3])
       
       # for second theta
-      phase3Sum5 <- phase3Sum5 + draws[i,k+5] * draws[i-1,4] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 3 & data[[k]]$trun == F)]^draws[i-1,3],
+      phase3Sum5 <- phase3Sum5 + draws[i,k+5] * draws[i-1,4] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 3 & data[[k]]$Censor == 1 & data[[k]]$trun == F)]^draws[i-1,3],
                                                                    data[[k]]$Upper[which(data[[k]]$Phase == 3 & data[[k]]$trun == T)]^draws[i-1,3] -
                                                                      data[[k]]$Lower[which(data[[k]]$Phase == 3 & data[[k]]$trun == T)]^draws[i-1,3])
     }
@@ -201,9 +202,9 @@ PLPMCMC <- function(data, samples = 5000, shapePriorA = .001,
   for(i in 1:nrow(finalDraws)){
     for(j in 6:ncol(finalDraws)){
       d[i] <- d[i] - 
-        2*(logWeibullSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 1 & data[[j-5]]$trun == F)], finalDraws[i,3], finalDraws[i,j]) +
-             logWeibullSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 2 & data[[j-5]]$trun == F)], finalDraws[i,3], finalDraws[i,j]*finalDraws[i,4]) +
-             logWeibullSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 3 & data[[j-5]]$trun == F)], finalDraws[i,3], finalDraws[i,j]*finalDraws[i,4]*finalDraws[i,5]) -
+        2*(logPLPSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 1 & data[[j-5]]$trun == F)], finalDraws[i,3], finalDraws[i,j]) +
+             logPLPSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 2 & data[[j-5]]$trun == F)], finalDraws[i,3], finalDraws[i,j]*finalDraws[i,4]) +
+             logPLPSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 3 & data[[j-5]]$trun == F)], finalDraws[i,3], finalDraws[i,j]*finalDraws[i,4]*finalDraws[i,5]) -
              sum(finalDraws[i,j]*(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 1 & data[[j-5]]$Phase == 1 & data[[j-5]]$trun == F)]^finalDraws[i,3])) -
              sum(finalDraws[i,j]*finalDraws[i,4]*(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 1 & data[[j-5]]$Phase == 2 & data[[j-5]]$trun == F)]^finalDraws[i,3])) -
              sum(finalDraws[i,j]*finalDraws[i,4]*finalDraws[i,5]*(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 1 & data[[j-5]]$Phase == 3 & data[[j-5]]$trun == F)]^finalDraws[i,3])) +
@@ -216,9 +217,9 @@ PLPMCMC <- function(data, samples = 5000, shapePriorA = .001,
   davg <- mean(d)
   dthetahat <- 0
   for(j in 6:ncol(finalDraws)){
-    dthetahat <- dthetahat - 2*(logWeibullSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 1 & data[[j-5]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,j])) +
-                                  logWeibullSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 2 & data[[j-5]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,j])*mean(finalDraws[,4])) +
-                                  logWeibullSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 3 & data[[j-5]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,j])*mean(finalDraws[,4])*mean(finalDraws[,5])) -
+    dthetahat <- dthetahat - 2*(logPLPSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 1 & data[[j-5]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,j])) +
+                                  logPLPSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 2 & data[[j-5]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,j])*mean(finalDraws[,4])) +
+                                  logPLPSumCPP(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 0 & data[[j-5]]$Phase == 3 & data[[j-5]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,j])*mean(finalDraws[,4])*mean(finalDraws[,5])) -
                                   sum(mean(finalDraws[,j])*(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 1 & data[[j-5]]$Phase == 1 & data[[j-5]]$trun == F)]^mean(finalDraws[,3]))) -
                                   sum(mean(finalDraws[,j])*mean(finalDraws[,4])*(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 1 & data[[j-5]]$Phase == 2 & data[[j-5]]$trun == F)]^mean(finalDraws[,3]))) -
                                   sum(mean(finalDraws[,j])*mean(finalDraws[,4])*mean(finalDraws[,5])*(data[[j-5]]$totalMiles[which(data[[j-5]]$Censor == 1 & data[[j-5]]$Phase == 3 & data[[j-5]]$trun == F)]^mean(finalDraws[,3]))) +

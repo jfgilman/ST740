@@ -1,5 +1,11 @@
 library(coda)
 
+# TODO
+# code up modulated power law process
+# code up non-hierarichal models
+
+
+
 ################################################################################
 # Testing Exponential-Gamma Hierarchical Model without censoring
 ################################################################################
@@ -131,7 +137,6 @@ for(i in 1:length(subListGAN)){
 
 expoResults2 <- expoMCMC(subListGAN[[20]], 10000, tuning = 8)
 
-expoResults2$acceptance
 expoResults2$DIC
 expoResults2$PD
 
@@ -249,7 +254,7 @@ for(i in 1:length(subList)){
 # Weibull test
 ################################################################################
 
-weibullResults3 <- WeibullMCMC(subList[[20]], 10000)
+weibullResults3 <- BAOWMCMC(subList[[20]], 20000, burnin = 5000)
 
 weibullResults3$DIC
 weibullResults3$PD
@@ -286,6 +291,102 @@ plot(as.mcmc(PLPResults1$draws[,8]))
 plot(as.mcmc(PLPResults1$draws[,9]))
 plot(as.mcmc(PLPResults1$draws[,10]))
 
-# TODO
-# code up modulated power law process
-# code up non-hierarichal models
+
+
+# simulation to test code
+shape <- .3
+lambda <- rgamma(8, .5, 1.5)
+theta1 <- .8
+theta2 <- .9
+
+testData2 <- list()
+
+for(j in 1:26){
+  testData2[[j]] <- vector("list", 8)
+  
+  for(i in 1:8){
+    testData2[[j]][[i]] <- data.frame(totalMiles = rep(0, 1000),
+                                     Censor = c(rep(0, 399), 1, rep(0, 299), 1, rep(0, 299), 1),
+                                     Phase = c(rep(1,400), rep(2,300), rep(3,300)),
+                                     trun = rep(F, 1000),
+                                     Lower = rep(0, 1000),
+                                     Upper = rep(0, 1000),
+                                     MBF = rep(0, 1000))
+    testData2[[j]][[i]]$totalMiles[1] <- plpF.inv(runif(1), 0, lambda[i], shape)
+    for(k in 2:400){
+      testData2[[j]][[i]]$totalMiles[k] <- plpF.inv(runif(1), testData2[[j]][[i]]$totalMiles[k-1], lambda[i], shape)
+    }
+    testData2[[j]][[i]]$totalMiles[401] <- plpF.inv(runif(1), 0, lambda[i], shape)
+    for(k in 402:700){
+      testData2[[j]][[i]]$totalMiles[k] <- plpF.inv(runif(1), testData2[[j]][[i]]$totalMiles[k-1], lambda[i]*theta1, shape)
+    }
+    testData2[[j]][[i]]$totalMiles[701] <- plpF.inv(runif(1), 0, lambda[i], shape)
+    for(k in 702:1000){
+      testData2[[j]][[i]]$totalMiles[k] <- plpF.inv(runif(1), testData2[[j]][[i]]$totalMiles[k-1], lambda[i]*theta1*theta2, shape)
+    }
+    testData2[[j]][[i]]$MBF[1] <- testData2[[j]][[i]]$totalMiles[1]
+    testData2[[j]][[i]]$MBF[401] <- testData2[[j]][[i]]$totalMiles[401]
+    testData2[[j]][[i]]$MBF[701] <- testData2[[j]][[i]]$totalMiles[701]
+    for(k in 2:400){
+      testData2[[j]][[i]]$MBF[k] <- testData2[[j]][[i]]$totalMiles[k] - testData2[[j]][[i]]$totalMiles[k-1]
+    }
+    for(k in 402:700){
+      testData2[[j]][[i]]$MBF[k] <- testData2[[j]][[i]]$totalMiles[k] - testData2[[j]][[i]]$totalMiles[k-1]
+    }
+    for(k in 702:1000){
+      testData2[[j]][[i]]$MBF[k] <- testData2[[j]][[i]]$totalMiles[k] - testData2[[j]][[i]]$totalMiles[k-1]
+    }
+  }
+}
+
+PLPResults2 <- PLPMCMC(testData2[[1]], 20000, burnin = 5000)
+
+PLPResults2$DIC
+PLPResults2$PD
+
+plot(as.mcmc(PLPResults2$draws[,1]))
+plot(as.mcmc(PLPResults2$draws[,2]))
+plot(as.mcmc(PLPResults2$draws[,3]))
+plot(as.mcmc(PLPResults2$draws[,4]))
+plot(as.mcmc(PLPResults2$draws[,5]))
+plot(as.mcmc(PLPResults2$draws[,6]))
+plot(as.mcmc(PLPResults2$draws[,7]))
+plot(as.mcmc(PLPResults2$draws[,8]))
+plot(as.mcmc(PLPResults2$draws[,9]))
+plot(as.mcmc(PLPResults2$draws[,10]))
+
+
+
+weibullResults4 <- BAOWMCMC(testData2[[1]], 20000, burnin = 5000)
+
+weibullResults4$DIC
+weibullResults4$PD
+
+plot(as.mcmc(weibullResults4$draws[,1]))
+plot(as.mcmc(weibullResults4$draws[,2]))
+plot(as.mcmc(weibullResults4$draws[,3]))
+plot(as.mcmc(weibullResults4$draws[,4]))
+plot(as.mcmc(weibullResults4$draws[,5]))
+plot(as.mcmc(weibullResults4$draws[,6]))
+plot(as.mcmc(weibullResults4$draws[,7]))
+plot(as.mcmc(weibullResults4$draws[,8]))
+plot(as.mcmc(weibullResults4$draws[,9]))
+plot(as.mcmc(weibullResults4$draws[,10]))
+
+
+weibullResults5 <- WeibullMCMC(testData2[[1]], 20000, burnin = 5000)
+
+weibullResults5$DIC
+weibullResults5$PD
+
+plot(as.mcmc(weibullResults5$draws[,1]))
+plot(as.mcmc(weibullResults5$draws[,2]))
+plot(as.mcmc(weibullResults5$draws[,3]))
+plot(as.mcmc(weibullResults5$draws[,4]))
+plot(as.mcmc(weibullResults5$draws[,5]))
+plot(as.mcmc(weibullResults5$draws[,6]))
+plot(as.mcmc(weibullResults5$draws[,7]))
+plot(as.mcmc(weibullResults5$draws[,8]))
+plot(as.mcmc(weibullResults5$draws[,9]))
+plot(as.mcmc(weibullResults5$draws[,10]))
+
