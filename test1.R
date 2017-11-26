@@ -1,7 +1,6 @@
 library(coda)
 
 # TODO
-# code up modulated power law process
 # code up non-hierarichal models
 
 
@@ -13,6 +12,7 @@ source("expoMCMC.R")
 source("weibullMCMC.R")
 source("BAOWeibullMCMC.R")
 source("PLPMCMC.R")
+source("MPLPMCMC.R")
 source("WeibullCDFfuns.R")
 
 # simulation to test code
@@ -219,11 +219,10 @@ for(i in 1:length(subList)){
 
 for(i in 1:length(subList)){
   for(j in 1:length(subList[[i]]))
-    if(all(subList[[i]][[j]]$trun == F)){
-    } else {
       for(k in 1:nrow(subList[[i]][[j]]))
         if(subList[[i]][[j]][k,4] == T){
-          if(k == 1){
+          if(k == 1 || subList[[i]][[j]][k,3] > subList[[i]][[j]][k-1,3]){
+            subList[[i]][[j]][k,6] <- subList[[i]][[j]][k,7]
           } else {
             if(subList[[i]][[j]][k-1,2] == 1 & subList[[i]][[j]][k-1,3] != 3){
               subList[[i]][[j]][k,3] <- subList[[i]][[j]][k-1,3] + 1
@@ -246,8 +245,14 @@ for(i in 1:length(subList)){
               subList[[i]][[j]][k,6] <- subList[[i]][[j]][k+6,7]
             }
           }
+        } else {
+          if(k == 1 || subList[[i]][[j]][k,3] > subList[[i]][[j]][k-1,3]){
+            subList[[i]][[j]][k,6] <- subList[[i]][[j]][k,7]
+          } else {
+            subList[[i]][[j]][k,6] <- subList[[i]][[j]][k,7]
+            subList[[i]][[j]][k,5] <- subList[[i]][[j]][k-1,7]
+          }
         }
-    }
 }
 
 ################################################################################
@@ -291,9 +296,27 @@ plot(as.mcmc(PLPResults1$draws[,8]))
 plot(as.mcmc(PLPResults1$draws[,9]))
 plot(as.mcmc(PLPResults1$draws[,10]))
 
+################################################################################
+# Modulated Power Law Process test
+################################################################################
+source("MPLPMCMC.R")
+MPLPResults1 <- MPLPMCMC(subList[[20]], 20000, burnin = 5000)
 
+MPLPResults1$DIC
+MPLPResults1$PD
 
-# simulation to test code
+plot(as.mcmc(MPLPResults1$draws[,1]))
+plot(as.mcmc(MPLPResults1$draws[,2]))
+plot(as.mcmc(MPLPResults1$draws[,3]))
+plot(as.mcmc(MPLPResults1$draws[,4]))
+plot(as.mcmc(MPLPResults1$draws[,5]))
+plot(as.mcmc(MPLPResults1$draws[,6]))
+plot(as.mcmc(MPLPResults1$draws[,7]))
+plot(as.mcmc(MPLPResults1$draws[,8]))
+plot(as.mcmc(MPLPResults1$draws[,9]))
+plot(as.mcmc(MPLPResults1$draws[,10]))
+
+# simulation to test code PLP
 shape <- .3
 lambda <- rgamma(8, .5, 1.5)
 theta1 <- .8
@@ -316,25 +339,34 @@ for(j in 1:26){
     for(k in 2:400){
       testData2[[j]][[i]]$totalMiles[k] <- plpF.inv(runif(1), testData2[[j]][[i]]$totalMiles[k-1], lambda[i], shape)
     }
-    testData2[[j]][[i]]$totalMiles[401] <- plpF.inv(runif(1), 0, lambda[i], shape)
+    testData2[[j]][[i]]$totalMiles[401] <- plpF.inv(runif(1), 0, lambda[i]*theta1, shape)
     for(k in 402:700){
       testData2[[j]][[i]]$totalMiles[k] <- plpF.inv(runif(1), testData2[[j]][[i]]$totalMiles[k-1], lambda[i]*theta1, shape)
     }
-    testData2[[j]][[i]]$totalMiles[701] <- plpF.inv(runif(1), 0, lambda[i], shape)
+    testData2[[j]][[i]]$totalMiles[701] <- plpF.inv(runif(1), 0, lambda[i]*theta1*theta2, shape)
     for(k in 702:1000){
       testData2[[j]][[i]]$totalMiles[k] <- plpF.inv(runif(1), testData2[[j]][[i]]$totalMiles[k-1], lambda[i]*theta1*theta2, shape)
     }
     testData2[[j]][[i]]$MBF[1] <- testData2[[j]][[i]]$totalMiles[1]
     testData2[[j]][[i]]$MBF[401] <- testData2[[j]][[i]]$totalMiles[401]
     testData2[[j]][[i]]$MBF[701] <- testData2[[j]][[i]]$totalMiles[701]
+    testData2[[j]][[i]]$Upper[1] <- testData2[[j]][[i]]$totalMiles[1]
+    testData2[[j]][[i]]$Upper[401] <- testData2[[j]][[i]]$totalMiles[401]
+    testData2[[j]][[i]]$Upper[701] <- testData2[[j]][[i]]$totalMiles[701]
     for(k in 2:400){
       testData2[[j]][[i]]$MBF[k] <- testData2[[j]][[i]]$totalMiles[k] - testData2[[j]][[i]]$totalMiles[k-1]
+      testData2[[j]][[i]]$Lower[k] <- testData2[[j]][[i]]$totalMiles[k-1]
+      testData2[[j]][[i]]$Upper[k] <- testData2[[j]][[i]]$totalMiles[k]
     }
     for(k in 402:700){
       testData2[[j]][[i]]$MBF[k] <- testData2[[j]][[i]]$totalMiles[k] - testData2[[j]][[i]]$totalMiles[k-1]
+      testData2[[j]][[i]]$Lower[k] <- testData2[[j]][[i]]$totalMiles[k-1]
+      testData2[[j]][[i]]$Upper[k] <- testData2[[j]][[i]]$totalMiles[k]
     }
     for(k in 702:1000){
       testData2[[j]][[i]]$MBF[k] <- testData2[[j]][[i]]$totalMiles[k] - testData2[[j]][[i]]$totalMiles[k-1]
+      testData2[[j]][[i]]$Lower[k] <- testData2[[j]][[i]]$totalMiles[k-1]
+      testData2[[j]][[i]]$Upper[k] <- testData2[[j]][[i]]$totalMiles[k]
     }
   }
 }
@@ -389,4 +421,89 @@ plot(as.mcmc(weibullResults5$draws[,7]))
 plot(as.mcmc(weibullResults5$draws[,8]))
 plot(as.mcmc(weibullResults5$draws[,9]))
 plot(as.mcmc(weibullResults5$draws[,10]))
+
+
+
+###########################################################################
+
+# simulation to test code MPLP
+shape <- 1
+lambda <- rep(1,8)
+theta1 <- 1
+theta2 <- 1
+kappa <- 1
+
+L.fun <- function(t, scale, shape){
+  return(scale * t^shape)
+}
+L.inv <- function(d, scale, shape){
+  return((d/scale)^(1/shape))
+}
+
+testData3 <- list()
+
+for(j in 1:26){
+  testData3[[j]] <- vector("list", 8)
+  
+  for(i in 1:8){
+    testData3[[j]][[i]] <- data.frame(totalMiles = rep(0, 1000),
+                                      Censor = c(rep(0, 399), 1, rep(0, 299), 1, rep(0, 299), 1),
+                                      Phase = c(rep(1,400), rep(2,300), rep(3,300)),
+                                      trun = rep(F, 1000),
+                                      Lower = rep(0, 1000),
+                                      Upper = rep(0, 1000),
+                                      MBF = rep(0, 1000))
+    testData3[[j]][[i]]$totalMiles[1] <- L.inv(rgamma(1, kappa, 1), lambda[i], shape)
+    for(k in 2:400){
+      testData3[[j]][[i]]$totalMiles[k] <- L.inv(rgamma(1, kappa, 1) + L.fun(testData3[[j]][[i]]$totalMiles[k-1], lambda[i], shape), lambda[i], shape)
+    }
+    testData3[[j]][[i]]$totalMiles[401] <- L.inv(rgamma(1, kappa, 1), lambda[i]*theta1, shape)
+    for(k in 402:700){
+      testData3[[j]][[i]]$totalMiles[k] <- L.inv(rgamma(1, kappa, 1) + L.fun(testData3[[j]][[i]]$totalMiles[k-1], lambda[i]*theta1, shape), lambda[i]*theta1, shape)
+    }
+    testData3[[j]][[i]]$totalMiles[701] <- L.inv(rgamma(1, kappa, 1), lambda[i]*theta1*theta2, shape)
+    for(k in 702:1000){
+      testData3[[j]][[i]]$totalMiles[k] <- L.inv(rgamma(1, kappa, 1) + L.fun(testData3[[j]][[i]]$totalMiles[k-1], lambda[i]*theta1*theta2, shape), lambda[i]*theta1*theta2, shape)
+    }
+    testData3[[j]][[i]]$MBF[1] <- testData3[[j]][[i]]$totalMiles[1]
+    testData3[[j]][[i]]$MBF[401] <- testData3[[j]][[i]]$totalMiles[401]
+    testData3[[j]][[i]]$MBF[701] <- testData3[[j]][[i]]$totalMiles[701]
+    testData3[[j]][[i]]$Upper[1] <- testData3[[j]][[i]]$totalMiles[1]
+    testData3[[j]][[i]]$Upper[401] <- testData3[[j]][[i]]$totalMiles[401]
+    testData3[[j]][[i]]$Upper[701] <- testData3[[j]][[i]]$totalMiles[701]
+    for(k in 2:400){
+      testData3[[j]][[i]]$MBF[k] <- testData3[[j]][[i]]$totalMiles[k] - testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Lower[k] <- testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Upper[k] <- testData3[[j]][[i]]$totalMiles[k]
+    }
+    for(k in 402:700){
+      testData3[[j]][[i]]$MBF[k] <- testData3[[j]][[i]]$totalMiles[k] - testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Lower[k] <- testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Upper[k] <- testData3[[j]][[i]]$totalMiles[k]
+    }
+    for(k in 702:1000){
+      testData3[[j]][[i]]$MBF[k] <- testData3[[j]][[i]]$totalMiles[k] - testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Lower[k] <- testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Upper[k] <- testData3[[j]][[i]]$totalMiles[k]
+    }
+  }
+}
+source("MPLPMCMC.R")
+MPLPResults2 <- MPLPMCMC(testData3[[1]], 20000, burnin = 5000)
+
+MPLPResults2$DIC
+MPLPResults2$PD
+
+print(lambda)
+
+plot(as.mcmc(MPLPResults2$draws[,1]))
+plot(as.mcmc(MPLPResults2$draws[,2]))
+plot(as.mcmc(MPLPResults2$draws[,3]))
+plot(as.mcmc(MPLPResults2$draws[,4]))
+plot(as.mcmc(MPLPResults2$draws[,5]))
+plot(as.mcmc(MPLPResults2$draws[,6]))
+plot(as.mcmc(MPLPResults2$draws[,7]))
+plot(as.mcmc(MPLPResults2$draws[,8]))
+plot(as.mcmc(MPLPResults2$draws[,9]))
+plot(as.mcmc(MPLPResults2$draws[,10]))
 
