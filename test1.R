@@ -299,7 +299,7 @@ plot(as.mcmc(PLPResults1$draws[,10]))
 ################################################################################
 # Modulated Power Law Process test
 ################################################################################
-source("MPLPMCMC.R")
+
 MPLPResults1 <- MPLPMCMC(subList[[20]], 20000, burnin = 5000)
 
 MPLPResults1$DIC
@@ -427,11 +427,11 @@ plot(as.mcmc(weibullResults5$draws[,10]))
 ###########################################################################
 
 # simulation to test code MPLP
-shape <- 1
-lambda <- rep(1,8)
-theta1 <- 1
-theta2 <- 1
-kappa <- 1
+shape <- .5
+lambda <- rgamma(8, .5, 1.5)
+theta1 <- .8
+theta2 <- .9
+kappa <- 1.5
 
 L.fun <- function(t, scale, shape){
   return(scale * t^shape)
@@ -488,8 +488,8 @@ for(j in 1:26){
     }
   }
 }
-source("MPLPMCMC.R")
-MPLPResults2 <- MPLPMCMC(testData3[[1]], 20000, burnin = 5000)
+
+MPLPResults2 <- MPLPMCMC(testData3[[1]], 20000, burnin = 10000)
 
 MPLPResults2$DIC
 MPLPResults2$PD

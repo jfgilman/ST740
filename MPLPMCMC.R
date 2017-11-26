@@ -2,7 +2,7 @@
 logMPLPsum <- function(U, L, kappa, shape, scale){
   d <- 0
   if(length(U) > 0){
-    d <- sum(-log(gamma(kappa)) + log(shape) + log(scale) + (shape - 1)*log(U) + (kappa - 1)*(log(scale*(U^shape - L^shape))))
+    d <- sum(-log(gamma(kappa)) + log(shape) + kappa*log(scale) + (shape - 1)*log(U) + (kappa - 1)*(log((U^shape - L^shape))))
     return(d)
   } else {
     return(0)
@@ -90,7 +90,7 @@ MPLPMCMC <- function(data, samples = 5000, shapePriorA = .001,
   for (i in 2:samples) {
     
     for(j in 7:ncol(draws)){
-      draws[i,j] <- rgamma(1,sum(data[[j-6]]$Censor == 0)^draws[i-1,6] + draws[i-1,1],
+      draws[i,j] <- rgamma(1,sum(data[[j-6]]$Censor == 0)*draws[i-1,6] + draws[i-1,1],
                            sum(data[[j-6]]$totalMiles[which(data[[j-6]]$Phase == 1 & data[[j-6]]$Censor == 1 & data[[j-6]]$trun == F)]^draws[i-1,3],
                                (draws[i-1,4] * data[[j-6]]$totalMiles[which(data[[j-6]]$Phase == 2 & data[[j-6]]$Censor == 1 & data[[j-6]]$trun == F)]^draws[i-1,3]),
                                (draws[i-1,4] * draws[i-1,5] * data[[j-6]]$totalMiles[which(data[[j-6]]$Phase == 3 & data[[j-6]]$Censor == 1 & data[[j-6]]$trun == F)]^draws[i-1,3])) +
@@ -113,23 +113,23 @@ MPLPMCMC <- function(data, samples = 5000, shapePriorA = .001,
     phase3Sum4 <- 0
     phase3Sum5 <- 0
     for(k in 1:length(data)){
-      phase2Sum <- phase2Sum + draws[i,k+5] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 2 & data[[k]]$Censor == 1 & data[[k]]$trun == F)]^draws[i-1,3],
+      phase2Sum <- phase2Sum + draws[i,k+6] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 2 & data[[k]]$Censor == 1 & data[[k]]$trun == F)]^draws[i-1,3],
                                                   data[[k]]$Upper[which(data[[k]]$Phase == 2 & data[[k]]$trun == T)]^draws[i-1,3] -
                                                     data[[k]]$Lower[which(data[[k]]$Phase == 2 & data[[k]]$trun == T)]^draws[i-1,3])
       
       # for the first theta
-      phase3Sum4 <- phase3Sum4 + draws[i,k+5] * draws[i-1,5] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 3 & data[[k]]$Censor == 1 & data[[k]]$trun == F)]^draws[i-1,3],
+      phase3Sum4 <- phase3Sum4 + draws[i,k+6] * draws[i-1,5] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 3 & data[[k]]$Censor == 1 & data[[k]]$trun == F)]^draws[i-1,3],
                                                                    data[[k]]$Upper[which(data[[k]]$Phase == 3 & data[[k]]$trun == T)]^draws[i-1,3] -
                                                                      data[[k]]$Lower[which(data[[k]]$Phase == 3 & data[[k]]$trun == T)]^draws[i-1,3])
       
       # for second theta
-      phase3Sum5 <- phase3Sum5 + draws[i,k+5] * draws[i-1,4] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 3 & data[[k]]$Censor == 1 & data[[k]]$trun == F)]^draws[i-1,3],
+      phase3Sum5 <- phase3Sum5 + draws[i,k+6] * draws[i-1,4] * sum(data[[k]]$totalMiles[which(data[[k]]$Phase == 3 & data[[k]]$Censor == 1 & data[[k]]$trun == F)]^draws[i-1,3],
                                                                    data[[k]]$Upper[which(data[[k]]$Phase == 3 & data[[k]]$trun == T)]^draws[i-1,3] -
                                                                      data[[k]]$Lower[which(data[[k]]$Phase == 3 & data[[k]]$trun == T)]^draws[i-1,3])
     }
     
-    draws[i,4] <- rgamma(1, (phase2Count + phase3Count)^draws[i-1,6] + hyperT1A, phase2Sum + phase3Sum4 + hyperT1B)
-    draws[i,5] <- rgamma(1, phase3Count^draws[i-1,6] + hyperT2A, phase3Sum5 + hyperT2B)
+    draws[i,4] <- rgamma(1, (phase2Count + phase3Count)*draws[i-1,6] + hyperT1A, phase2Sum + phase3Sum4 + hyperT1B)
+    draws[i,5] <- rgamma(1, phase3Count*draws[i-1,6] + hyperT2A, phase3Sum5 + hyperT2B)
     
     
     ################################
