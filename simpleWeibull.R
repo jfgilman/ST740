@@ -1,19 +1,64 @@
 
-simpExpoMCMC <- function(data, samples = 5000, shapePriorA = .001,
-                     shapePriorB = .001, lamPriorA = .001, lamPriorB = .001,
-                     theta1PriorA = .001, theta1PriorB = .001, theta2PriorA = .001,
-                     theta2PriorB = .001, theta1Start = 1, theta2Start = 1, tuning = 1,
-                     burnin = 1000, thin = 10){
+library(Rcpp)
+
+cppFunction('double logWeibullSumCPP(NumericVector x, double shape, double scale) {
+            
+            int nx = x.size();
+            double d = 0.0;
+            
+            for(int i = 0; i < nx; i++) {
+            d = d + log(shape) + log(scale) + (shape - 1)*log(x[i]) - scale*pow(x[i],shape);
+            }
+            
+            return d;
+            }')
+
+simpWeiMCMC <- function(data, samples = 5000, shapePriorA = .001,
+                         shapePriorB = .001, lamPriorA = .001, lamPriorB = .001,
+                         theta1PriorA = .001, theta1PriorB = .001, theta2PriorA = .001,
+                         theta2PriorB = .001, theta1Start = 1, theta2Start = 1, tuning = 1,
+                         burnin = 1000, thin = 10){
   
   # matrix for keeping MCMC draws for each parameter
   lam_draws <- rep(0, samples)
   lam_draws[1] <- 1
+  
+  beta_draws <- rep(0, samples)
+  beta_draws[1] <- 1
   
   theta1_draws <- rep(0, samples)
   theta1_draws[1] <- theta1Start
   
   theta2_draws <- rep(0, samples)
   theta2_draws[1] <- theta2Start
+  
+  # log posterior function for MCMC draws
+  logPost <- function(parm, d) {
+    
+    lp <- 0
+    for(k in 1:length(d)){
+      lp <- lp + 
+        sum(logWeibullSumCPP(d[[k]]$MBF[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 1 & d[[k]]$trun == F)], parm[4], parm[1])) +
+        sum(logWeibullSumCPP(d[[k]]$MBF[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 2 & d[[k]]$trun == F)], parm[4], parm[1]*parm[2])) +
+        sum(logWeibullSumCPP(d[[k]]$MBF[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 3 & d[[k]]$trun == F)], parm[4], parm[1]*parm[2]*parm[3])) -
+        sum(parm[1]*(d[[k]]$MBF[which(d[[k]]$Censor == 1 & d[[k]]$Phase == 1 & d[[k]]$trun == F)]^parm[4])) -
+        sum(parm[1]*parm[4]*(d[[k]]$MBF[which(d[[k]]$Censor == 1 & d[[k]]$Phase == 2 & d[[k]]$trun == F)]^parm[4])) -
+        sum(parm[1]*parm[4]*parm[5]*(d[[k]]$MBF[which(d[[k]]$Censor == 1 & d[[k]]$Phase == 3 & d[[k]]$trun == F)]^parm[4])) +
+        sum(parm[1]*(d[[k]]$Lower[which(d[[k]]$Phase == 1 & d[[k]]$trun == T)]^parm[4]) - 
+              parm[1]*(d[[k]]$Upper[which(d[[k]]$Phase == 1 & d[[k]]$trun == T)]^parm[4])) +
+        sum(parm[1]*parm[2]*(d[[k]]$Lower[which(d[[k]]$Phase == 2 & d[[k]]$trun == T)]^parm[4]) - 
+              parm[1]*parm[2]*(d[[k]]$Upper[which(d[[k]]$Phase == 2 & d[[k]]$trun == T)]^parm[4])) + 
+        sum(parm[1]*parm[2]*parm[3]*(d[[k]]$Lower[which(d[[k]]$Phase == 3 & d[[k]]$trun == T)]^parm[4]) - 
+              parm[1]*parm[2]*parm[3]*(d[[k]]$Upper[which(d[[k]]$Phase == 3 & d[[k]]$trun == T)]^parm[4])) 
+    }
+    
+    lp <- lp + 
+      dgamma(parm[1], lamPriorA, lamPriorB, log=T) + 
+      dgamma(parm[2],hyperT1A, hyperT1B, log=T) +
+      dgamma(parm[3],hyperT2A, hyperT2B, log=T)
+    
+    return(lp)
+  }
   
   # phase obs counts 
   phase2Count <- 0
@@ -39,7 +84,7 @@ simpExpoMCMC <- function(data, samples = 5000, shapePriorA = .001,
     }
     
     lam_draws[i] <- rgamma(1, noCenCount + lamPriorA, datSum + lamPriorB)
-
+    
     # Phase sums
     phase2Sum <- 0
     phase3Sum4 <- 0
