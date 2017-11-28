@@ -1,15 +1,6 @@
 
-
-source("simpleExpo.R")
-source("simpleWeibull.R")
-source("simpleBAOWei.R")
-source("simplePLP.R")
-source("simpleMPLP.R")
-source("expoMCMC.R")
-source("weibullMCMC.R")
-source("BAOWeibullMCMC.R")
-source("PLPMCMC.R")
-source("MPLPMCMC.R")
+library(compiler)
+library(parallel)
 
 ################################################################################
 # JLTV Data Good As New testing
@@ -149,3 +140,118 @@ for(i in 1:length(subList)){
         }
       }
 }
+################################################################################
+# Running simple models
+################################################################################
+
+ncores <- detectCores() - 2
+
+source("simpleExpo.R")
+M1 <- cmpfun(simpExpoMCMC)
+
+cl <- makeCluster(ncores)
+system.time(simpExpoResults <- parLapply(cl,subListGAN, M1))
+stopCluster(cl)
+save(simpExpoResults ,file="simpExpoResults.RData")
+
+source("simpleWeibull.R")
+M2 <- cmpfun(simpWeiMCMC)
+
+cl <- makeCluster(ncores)
+clusterExport(cl,c("logWeibullSum"))
+system.time(simpWeiResults <- parLapply(cl,subListGAN, M2))
+stopCluster(cl)
+save(simpWeiResults ,file="simpWeiResults.RData")
+
+source("simpleBAOWei.R")
+M3 <- cmpfun(simpBAOWeiMCMC)
+
+cl <- makeCluster(ncores)
+clusterExport(cl,c("logWeibullSum"))
+system.time(simpBAOWeiResults <- parLapply(cl,subList, M3))
+stopCluster(cl)
+save(simpBAOWeiResults ,file="simpBAOWeiResults.RData")
+
+source("simplePLP.R")
+M4 <- cmpfun(simpPLP)
+
+cl <- makeCluster(ncores)
+clusterExport(cl,c("logPLPSum","logPLPInterval"))
+system.time(simpPLPResults <- parLapply(cl,subList, M4))
+stopCluster(cl)
+save(simpPLPResults ,file="simpPLPResults.RData")
+
+source("simpleMPLP.R")
+M5 <- cmpfun(simpMPLPMCMC)
+
+cl <- makeCluster(ncores)
+clusterExport(cl,c("logMPLPsum", "logMPLPInterval"))
+system.time(simpMPLPResults <- parLapply(cl,subList, M5))
+stopCluster(cl)
+save(simpMPLPResults ,file="simpMPLPResults.RData")
+
+################################################################################
+# Running hierarchical models
+################################################################################
+
+source("expoMCMC.R")
+M6 <- cmpfun(expoMCMC)
+
+cl <- makeCluster(ncores)
+system.time(ExpoResults <- parLapply(cl,subListGAN, M6))
+stopCluster(cl)
+save(ExpoResults ,file="ExpoResults.RData")
+
+source("weibullMCMC.R")
+M7 <- cmpfun(WeibullMCMC)
+
+cl <- makeCluster(ncores)
+clusterExport(cl,c("logWeibullSum"))
+system.time(WeibullResults <- parLapply(cl,subListGAN, M7))
+stopCluster(cl)
+save(WeibullResults ,file="WeibullResults.RData")
+
+source("BAOWeibullMCMC.R")
+M8 <- cmpfun(BAOWMCMC)
+
+cl <- makeCluster(ncores)
+clusterExport(cl,c("logWeibullSum"))
+system.time(BAOWeiResults <- parLapply(cl,subList, M8))
+stopCluster(cl)
+save(BAOWeiResults ,file="BAOWeiResults.RData")
+
+source("PLPMCMC.R")
+M9 <- cmpfun(PLPMCMC)
+
+cl <- makeCluster(ncores)
+clusterExport(cl,c("logPLPSum","logPLPInterval"))
+system.time(PLPResults <- parLapply(cl,subList, M9))
+stopCluster(cl)
+save(PLPResults ,file="PLPResults.RData")
+
+source("MPLPMCMC.R")
+M10 <- cmpfun(MPLPMCMC)
+
+cl <- makeCluster(ncores)
+clusterExport(cl,c("logMPLPsum", "logMPLPInterval"))
+system.time(MPLPResults <- parLapply(cl,subList, M10))
+stopCluster(cl)
+save(MPLPResults ,file="MPLPResults.RData")
+
+
+DICResults <- matrix(0, nrow = 26, ncol = 10)
+for(i in 1:26){
+  DICResults[i,1] <- simpExpoResults[[i]]$DIC
+  DICResults[i,2] <- simpWeiResults[[i]]$DIC
+  DICResults[i,3] <- simpBAOWeiResults[[i]]$DIC
+  DICResults[i,4] <- simpPLPResults[[i]]$DIC
+  DICResults[i,5] <- simpMPLPResults[[i]]$DIC
+  
+  DICResults[i,1] <- ExpoResults[[i]]$DIC
+  DICResults[i,2] <- WeibullResults[[i]]$DIC
+  DICResults[i,3] <- BAOWeiResults[[i]]$DIC
+  DICResults[i,4] <- PLPResults[[i]]$DIC
+  DICResults[i,5] <- MPLPResults[[i]]$DIC
+}
+
+print(DICResults)

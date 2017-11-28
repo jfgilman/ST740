@@ -22,13 +22,13 @@ logMPLPInterval <- function(L, U, kappa, shape, scale){
 }
 
 
-MPLPMCMC <- function(data, samples = 5000, shapePriorA = .001,
+MPLPMCMC <- function(data, samples = 40000, shapePriorA = .001,
                     shapePriorB = .001, HyperG1 = .001, HyperG2 = .001,
                     hyperA1 = .001, hyperA2 = .001, hyperT1A = 3,
                     hyperT1B = 3, hyperT2A = 3, hyperT2B = 3, hyperKA = .001, hyperKB = .001,
                     alphaStart = 1, betaStart = 1, theta1Start = 1,
                     theta2Start = 1, shapeStart = 1, kappaStart = 1, tuningA = 1,
-                    tuningS = 1, tuningK = 1, burnin = 1000, thin = 10){
+                    tuningS = 1, tuningK = 1, burnin = 20000, thin = 10){
   
   # Save the starting data for imputation
   dataStart <- data

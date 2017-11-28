@@ -1,34 +1,55 @@
-library(Rcpp)
+# library(Rcpp)
+# 
+# cppFunction('double logPLPSum(NumericVector x, double shape, double scale) {
+# 
+#             int nx = x.size();
+#             double d = 0.0;
+# 
+#             for(int i = 0; i < nx; i++) {
+#             d = d + log(shape) + log(scale) + (shape - 1)*log(x[i]);
+#             }
+# 
+#             return d;
+#             }')
+# 
+# cppFunction('double logPLPInterval(NumericVector L, NumericVector U, double shape, double scale) {
+# 
+#             int nx = L.size();
+#             double d = 0.0;
+# 
+#             for(int i = 0; i < nx; i++) {
+#             d = d + log(scale) + log(pow(U[i],shape) - pow(L[i],shape)) - scale*(pow(U[i],shape) - pow(L[i],shape));
+#             }
+# 
+#             return d;
+#             }')
 
-cppFunction('double logPLPSumCPP(NumericVector x, double shape, double scale) {
-            
-            int nx = x.size();
-            double d = 0.0;
-            
-            for(int i = 0; i < nx; i++) {
-            d = d + log(shape) + log(scale) + (shape - 1)*log(x[i]);
-            }
-            
-            return d;
-            }')
+logPLPSum <- function(x, shape, scale){
+  d <- 0
+  if(length(x) > 0){
+    for(i in 1:length(x)){
+      d <- d + log(shape) + log(scale) + (shape - 1)*log(x[i])
+    }
+  }
+  return(d)
+}
 
-cppFunction('double logPLPInterval(NumericVector L, NumericVector U, double shape, double scale) {
-            
-            int nx = L.size();
-            double d = 0.0;
-            
-            for(int i = 0; i < nx; i++) {
-            d = d + log(scale) + log(pow(U[i],shape) - pow(L[i],shape)) - scale*(pow(U[i],shape) - pow(L[i],shape));
-            }
-            
-            return d;
-            }')
+logPLPInterval <- function(L, U, shape, scale){
+  d <- 0
+  if(length(L) > 0){
+    for(i in 1:length(L)){
+      d <- sum(log(scale) + log(U[i]^shape - L[i]^shape) - scale*(U[i]^shape - L[i]^shape))
+    }
+  }
+  return(d)
+}
 
 
-simpPLP <- function(data, samples = 5000, shapePriorA = .001,
+
+simpPLP <- function(data, samples = 40000, shapePriorA = .001,
                     shapePriorB = .001, hyperT1A = 3, hyperT1B = 3, hyperT2A = 3, hyperT2B = 3,
                     theta1Start = 1, theta2Start = 1, shapeStart = 1, tuningA = 1,
-                    tuningS = 1, burnin = 1000, thin = 10, lamPriorA = .001, lamPriorB = .001){
+                    tuningS = 1, burnin = 20000, thin = 10, lamPriorA = .001, lamPriorB = .001){
   
   
   # matrix for keeping MCMC draws for each parameter
@@ -49,9 +70,9 @@ simpPLP <- function(data, samples = 5000, shapePriorA = .001,
     for(k in 1:length(d)){
       
       lp <- lp + 
-        logPLPSumCPP(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 1 & d[[k]]$trun == F)], parm[3], parm[6]) +
-        logPLPSumCPP(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 2 & d[[k]]$trun == F)], parm[3], parm[6]*parm[4]) +
-        logPLPSumCPP(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 3 & d[[k]]$trun == F)], parm[3], parm[6]*parm[4]*parm[5]) -
+        logPLPSum(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 1 & d[[k]]$trun == F)], parm[3], parm[6]) +
+        logPLPSum(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 2 & d[[k]]$trun == F)], parm[3], parm[6]*parm[4]) +
+        logPLPSum(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 3 & d[[k]]$trun == F)], parm[3], parm[6]*parm[4]*parm[5]) -
         sum(parm[6]*(d[[k]]$totalMiles[which(d[[k]]$Censor == 1 & d[[k]]$Phase == 1 & d[[k]]$trun == F)]^parm[3])) -
         sum(parm[6]*parm[4]*(d[[k]]$totalMiles[which(d[[k]]$Censor == 1 & d[[k]]$Phase == 2 & d[[k]]$trun == F)]^parm[3])) -
         sum(parm[6]*parm[4]*parm[5]*(d[[k]]$totalMiles[which(d[[k]]$Censor == 1 & d[[k]]$Phase == 3 & d[[k]]$trun == F)]^parm[3])) +
@@ -165,9 +186,9 @@ simpPLP <- function(data, samples = 5000, shapePriorA = .001,
   for(i in 1:nrow(finalDraws)){
     for(j in 1:length(data)){
       d[i] <- d[i] - 
-        2*(logPLPSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 1 & data[[j]]$trun == F)], finalDraws[i,3], finalDraws[i,6]) +
-             logPLPSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 2 & data[[j]]$trun == F)], finalDraws[i,3], finalDraws[i,6]*finalDraws[i,4]) +
-             logPLPSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 3 & data[[j]]$trun == F)], finalDraws[i,3], finalDraws[i,6]*finalDraws[i,4]*finalDraws[i,5]) -
+        2*(logPLPSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 1 & data[[j]]$trun == F)], finalDraws[i,3], finalDraws[i,6]) +
+             logPLPSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 2 & data[[j]]$trun == F)], finalDraws[i,3], finalDraws[i,6]*finalDraws[i,4]) +
+             logPLPSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 3 & data[[j]]$trun == F)], finalDraws[i,3], finalDraws[i,6]*finalDraws[i,4]*finalDraws[i,5]) -
              sum(finalDraws[i,6]*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 1 & data[[j]]$trun == F)]^finalDraws[i,3])) -
              sum(finalDraws[i,6]*finalDraws[i,4]*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 2 & data[[j]]$trun == F)]^finalDraws[i,3])) -
              sum(finalDraws[i,6]*finalDraws[i,4]*finalDraws[i,5]*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 3 & data[[j]]$trun == F)]^finalDraws[i,3])) +
@@ -180,9 +201,9 @@ simpPLP <- function(data, samples = 5000, shapePriorA = .001,
   davg <- mean(d)
   dthetahat <- 0
   for(j in 1:length(data)){
-    dthetahat <- dthetahat - 2*(logPLPSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 1 & data[[j]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,6])) +
-                                  logPLPSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 2 & data[[j]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,6])*mean(finalDraws[,4])) +
-                                  logPLPSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 3 & data[[j]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,6])*mean(finalDraws[,4])*mean(finalDraws[,5])) -
+    dthetahat <- dthetahat - 2*(logPLPSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 1 & data[[j]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,6])) +
+                                  logPLPSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 2 & data[[j]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,6])*mean(finalDraws[,4])) +
+                                  logPLPSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 3 & data[[j]]$trun == F)], mean(finalDraws[,3]), mean(finalDraws[,6])*mean(finalDraws[,4])*mean(finalDraws[,5])) -
                                   sum(mean(finalDraws[,6])*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 1 & data[[j]]$trun == F)]^mean(finalDraws[,3]))) -
                                   sum(mean(finalDraws[,6])*mean(finalDraws[,4])*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 2 & data[[j]]$trun == F)]^mean(finalDraws[,3]))) -
                                   sum(mean(finalDraws[,6])*mean(finalDraws[,4])*mean(finalDraws[,5])*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 3 & data[[j]]$trun == F)]^mean(finalDraws[,3]))) +

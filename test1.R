@@ -1,10 +1,5 @@
 library(coda)
 
-# TODO
-# code up non-hierarichal models
-
-
-
 ################################################################################
 # Testing Exponential-Gamma Hierarchical Model without censoring
 ################################################################################
@@ -57,7 +52,7 @@ plot(as.mcmc(expoResults1$draws[,10]))
 ################################################################################
 # Weibull testing
 ################################################################################
-weibullResults1 <- WeibullMCMC(testData[[1]], 10000)
+weibullResults1 <- WeibullMCMC(testData[[1]], 8000)
 
 weibullResults1$DIC
 weibullResults1$PD
@@ -371,7 +366,7 @@ for(j in 1:26){
   }
 }
 
-PLPResults2 <- PLPMCMC(testData2[[1]], 20000, burnin = 5000)
+PLPResults2 <- PLPMCMC(testData2[[1]], 10000, burnin = 5000)
 
 PLPResults2$DIC
 PLPResults2$PD
@@ -389,7 +384,7 @@ plot(as.mcmc(PLPResults2$draws[,10]))
 
 
 
-weibullResults4 <- BAOWMCMC(testData2[[1]], 20000, burnin = 5000)
+weibullResults4 <- BAOWMCMC(testData2[[1]], 10000, burnin = 5000)
 
 weibullResults4$DIC
 weibullResults4$PD
@@ -406,7 +401,7 @@ plot(as.mcmc(weibullResults4$draws[,9]))
 plot(as.mcmc(weibullResults4$draws[,10]))
 
 
-weibullResults5 <- WeibullMCMC(testData2[[1]], 20000, burnin = 5000)
+weibullResults5 <- WeibullMCMC(testData2[[1]], 10000, burnin = 5000)
 
 weibullResults5$DIC
 weibullResults5$PD

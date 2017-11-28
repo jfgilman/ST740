@@ -1,23 +1,30 @@
-library(Rcpp)
+# library(Rcpp)
+# 
+# cppFunction('double logWeibullSum(NumericVector x, double shape, double scale) {
+#             
+#             int nx = x.size();
+#             double d = 0.0;
+#             
+#             for(int i = 0; i < nx; i++) {
+#             d = d + log(shape) + log(scale) + (shape - 1)*log(x[i]) - scale*pow(x[i],shape);
+#             }
+#             
+#             return d;
+#             }')
 
-cppFunction('double logWeibullSumCPP(NumericVector x, double shape, double scale) {
-            
-            int nx = x.size();
-            double d = 0.0;
-            
-            for(int i = 0; i < nx; i++) {
-            d = d + log(shape) + log(scale) + (shape - 1)*log(x[i]) - scale*pow(x[i],shape);
-            }
-            
-            return d;
-            }')
+logWeibullSum <- function(x, shape, scale){
+  d <- 0
+  if(length(x) > 0){
+    d <- sum(log(shape) + log(scale) + (shape - 1)*log(x) - scale*(x^shape))
+  }
+}
 
-simpBAOWeiMCMC <- function(data, samples = 5000, shapePriorA = .001,
+simpBAOWeiMCMC <- function(data, samples = 40000, shapePriorA = .001,
                         shapePriorB = .001, lamPriorA = .001, lamPriorB = .001,
                         theta1PriorA = .001, theta1PriorB = .001, theta2PriorA = .001,
                         theta2PriorB = .001, theta1Start = 1, theta2Start = 1, betaStart = 1,
                         betaPriorA = .001, betaPriorB = .001, tuning = 1, 
-                        burnin = 1000, thin = 10, tuningS = 1){
+                        burnin = 20000, thin = 10, tuningS = 1){
   
   # matrix for keeping MCMC draws for each parameter
   lam_draws <- rep(0, samples)
@@ -40,9 +47,9 @@ simpBAOWeiMCMC <- function(data, samples = 5000, shapePriorA = .001,
     lp <- 0
     for(k in 1:length(d)){
       lp <- lp + 
-        sum(logWeibullSumCPP(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 1 & d[[k]]$trun == F)], parm[4], parm[1])) +
-        sum(logWeibullSumCPP(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 2 & d[[k]]$trun == F)], parm[4], parm[1]*parm[2])) +
-        sum(logWeibullSumCPP(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 3 & d[[k]]$trun == F)], parm[4], parm[1]*parm[2]*parm[3])) -
+        sum(logWeibullSum(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 1 & d[[k]]$trun == F)], parm[4], parm[1])) +
+        sum(logWeibullSum(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 2 & d[[k]]$trun == F)], parm[4], parm[1]*parm[2])) +
+        sum(logWeibullSum(d[[k]]$totalMiles[which(d[[k]]$Censor == 0 & d[[k]]$Phase == 3 & d[[k]]$trun == F)], parm[4], parm[1]*parm[2]*parm[3])) -
         sum(parm[1]*(d[[k]]$totalMiles[which(d[[k]]$Censor == 1 & d[[k]]$Phase == 1 & d[[k]]$trun == F)]^parm[4])) -
         sum(parm[1]*parm[2]*(d[[k]]$totalMiles[which(d[[k]]$Censor == 1 & d[[k]]$Phase == 2 & d[[k]]$trun == F)]^parm[4])) -
         sum(parm[1]*parm[2]*parm[3]*(d[[k]]$totalMiles[which(d[[k]]$Censor == 1 & d[[k]]$Phase == 3 & d[[k]]$trun == F)]^parm[4])) +
@@ -148,9 +155,9 @@ simpBAOWeiMCMC <- function(data, samples = 5000, shapePriorA = .001,
   for(i in 1:length(lam_finalDraws)){
     for(j in 1:length(data)){
       d[i] <- d[i] - 
-        2*(sum(logWeibullSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 1 & data[[j]]$trun == F)], beta_finalDraws[i], lam_finalDraws[i])) +
-             sum(logWeibullSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 2 & data[[j]]$trun == F)], beta_finalDraws[i], lam_finalDraws[i]*theta1_finalDraws[i])) +
-             sum(logWeibullSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 3 & data[[j]]$trun == F)], beta_finalDraws[i], lam_finalDraws[i]*theta1_finalDraws[i]*theta2_finalDraws[i])) -
+        2*(sum(logWeibullSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 1 & data[[j]]$trun == F)], beta_finalDraws[i], lam_finalDraws[i])) +
+             sum(logWeibullSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 2 & data[[j]]$trun == F)], beta_finalDraws[i], lam_finalDraws[i]*theta1_finalDraws[i])) +
+             sum(logWeibullSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 3 & data[[j]]$trun == F)], beta_finalDraws[i], lam_finalDraws[i]*theta1_finalDraws[i]*theta2_finalDraws[i])) -
              sum(lam_finalDraws[i]*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 1 & data[[j]]$trun == F)]^beta_finalDraws[i])) -
              sum(lam_finalDraws[i]*theta1_finalDraws[i]*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 2 & data[[j]]$trun == F)]^beta_finalDraws[i])) -
              sum(lam_finalDraws[i]*theta1_finalDraws[i]*theta2_finalDraws[i]*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 3 & data[[j]]$trun == F)]^beta_finalDraws[i])) +
@@ -163,9 +170,9 @@ simpBAOWeiMCMC <- function(data, samples = 5000, shapePriorA = .001,
   davg <- mean(d)
   dthetahat <- 0
   for(j in 1:length(data)){
-    dthetahat <- dthetahat - 2*(sum(logWeibullSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 1 & data[[j]]$trun == F)], mean(beta_finalDraws), mean(lam_finalDraws))) +
-                                  sum(logWeibullSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 2 & data[[j]]$trun == F)], mean(beta_finalDraws), mean(lam_finalDraws)*mean(theta1_finalDraws))) +
-                                  sum(logWeibullSumCPP(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 3 & data[[j]]$trun == F)], mean(beta_finalDraws), mean(lam_finalDraws)*mean(theta1_finalDraws)*mean(theta2_finalDraws))) -
+    dthetahat <- dthetahat - 2*(sum(logWeibullSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 1 & data[[j]]$trun == F)], mean(beta_finalDraws), mean(lam_finalDraws))) +
+                                  sum(logWeibullSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 2 & data[[j]]$trun == F)], mean(beta_finalDraws), mean(lam_finalDraws)*mean(theta1_finalDraws))) +
+                                  sum(logWeibullSum(data[[j]]$totalMiles[which(data[[j]]$Censor == 0 & data[[j]]$Phase == 3 & data[[j]]$trun == F)], mean(beta_finalDraws), mean(lam_finalDraws)*mean(theta1_finalDraws)*mean(theta2_finalDraws))) -
                                   sum(mean(lam_finalDraws)*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 1 & data[[j]]$trun == F)]^mean(beta_finalDraws))) -
                                   sum(mean(lam_finalDraws)*mean(theta1_finalDraws)*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 2 & data[[j]]$trun == F)]^mean(beta_finalDraws))) -
                                   sum(mean(lam_finalDraws)*mean(theta1_finalDraws)*mean(theta2_finalDraws)*(data[[j]]$totalMiles[which(data[[j]]$Censor == 1 & data[[j]]$Phase == 3 & data[[j]]$trun == F)]^mean(beta_finalDraws))) +

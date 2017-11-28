@@ -81,7 +81,7 @@ plot(as.mcmc(expoResults$theta2_draws))
 # Weibull test
 ################################################################################
 
-weiResults <- simpWeiMCMC(subListGAN[[20]], 10000, burnin = 2000)
+system.time(weiResults <- simpWeiMCMC(subListGAN[[20]], 10000, burnin = 2000))
 
 weiResults$DIC
 weiResults$PD
@@ -92,9 +92,6 @@ plot(as.mcmc(weiResults$theta2_draws))
 plot(as.mcmc(weiResults$shape_draws))
 
 
-################################################################################
-# Power Law Process test
-################################################################################
 ################################################################################
 # JLTV Data Bad As Old testing
 ################################################################################
@@ -177,7 +174,11 @@ for(i in 1:length(subList)){
       }
 }
 
-PLPResults1 <- simpPLP(subList[[20]], 10000, burnin = 2000)
+
+################################################################################
+# Power Law Process test
+################################################################################
+PLPResults1 <- simpPLP(subList[[20]], 5000, burnin = 2000)
 
 PLPResults1$DIC
 PLPResults1$PD
