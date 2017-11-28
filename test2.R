@@ -2,7 +2,9 @@ library(coda)
 
 source("simpleExpo.R")
 source("simpleWeibull.R")
+source("simpleBAOWei.R")
 source("simplePLP.R")
+source("simpleMPLP.R")
 
 ################################################################################
 # JLTV Data Good As New testing
@@ -184,4 +186,100 @@ plot(as.mcmc(PLPResults1$draws[,3]))
 plot(as.mcmc(PLPResults1$draws[,4]))
 plot(as.mcmc(PLPResults1$draws[,5]))
 plot(as.mcmc(PLPResults1$draws[,6]))
+
+################################################################################
+# Weibull test
+################################################################################
+
+weiResults2 <- simpBAOWeiMCMC(subList[[20]], 20000, burnin = 5000)
+
+weiResults2$DIC
+weiResults2$PD
+
+plot(as.mcmc(weiResults2$lam_draws))
+plot(as.mcmc(weiResults2$theta1_draws))
+plot(as.mcmc(weiResults2$theta2_draws))
+plot(as.mcmc(weiResults2$shape_draws))
+
+
+###########################################################################
+
+# simulation to test code MPLP
+shape <- .5
+lambda <- rep(1, 8)
+theta1 <- .8
+theta2 <- .9
+kappa <- 1.5
+
+L.fun <- function(t, scale, shape){
+  return(scale * t^shape)
+}
+L.inv <- function(d, scale, shape){
+  return((d/scale)^(1/shape))
+}
+
+testData3 <- list()
+
+for(j in 1:26){
+  testData3[[j]] <- vector("list", 8)
+  
+  for(i in 1:8){
+    testData3[[j]][[i]] <- data.frame(totalMiles = rep(0, 1000),
+                                      Censor = c(rep(0, 399), 1, rep(0, 299), 1, rep(0, 299), 1),
+                                      Phase = c(rep(1,400), rep(2,300), rep(3,300)),
+                                      trun = rep(F, 1000),
+                                      Lower = rep(0, 1000),
+                                      Upper = rep(0, 1000),
+                                      MBF = rep(0, 1000))
+    testData3[[j]][[i]]$totalMiles[1] <- L.inv(rgamma(1, kappa, 1), lambda[i], shape)
+    for(k in 2:400){
+      testData3[[j]][[i]]$totalMiles[k] <- L.inv(rgamma(1, kappa, 1) + L.fun(testData3[[j]][[i]]$totalMiles[k-1], lambda[i], shape), lambda[i], shape)
+    }
+    testData3[[j]][[i]]$totalMiles[401] <- L.inv(rgamma(1, kappa, 1), lambda[i]*theta1, shape)
+    for(k in 402:700){
+      testData3[[j]][[i]]$totalMiles[k] <- L.inv(rgamma(1, kappa, 1) + L.fun(testData3[[j]][[i]]$totalMiles[k-1], lambda[i]*theta1, shape), lambda[i]*theta1, shape)
+    }
+    testData3[[j]][[i]]$totalMiles[701] <- L.inv(rgamma(1, kappa, 1), lambda[i]*theta1*theta2, shape)
+    for(k in 702:1000){
+      testData3[[j]][[i]]$totalMiles[k] <- L.inv(rgamma(1, kappa, 1) + L.fun(testData3[[j]][[i]]$totalMiles[k-1], lambda[i]*theta1*theta2, shape), lambda[i]*theta1*theta2, shape)
+    }
+    testData3[[j]][[i]]$MBF[1] <- testData3[[j]][[i]]$totalMiles[1]
+    testData3[[j]][[i]]$MBF[401] <- testData3[[j]][[i]]$totalMiles[401]
+    testData3[[j]][[i]]$MBF[701] <- testData3[[j]][[i]]$totalMiles[701]
+    testData3[[j]][[i]]$Upper[1] <- testData3[[j]][[i]]$totalMiles[1]
+    testData3[[j]][[i]]$Upper[401] <- testData3[[j]][[i]]$totalMiles[401]
+    testData3[[j]][[i]]$Upper[701] <- testData3[[j]][[i]]$totalMiles[701]
+    for(k in 2:400){
+      testData3[[j]][[i]]$MBF[k] <- testData3[[j]][[i]]$totalMiles[k] - testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Lower[k] <- testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Upper[k] <- testData3[[j]][[i]]$totalMiles[k]
+    }
+    for(k in 402:700){
+      testData3[[j]][[i]]$MBF[k] <- testData3[[j]][[i]]$totalMiles[k] - testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Lower[k] <- testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Upper[k] <- testData3[[j]][[i]]$totalMiles[k]
+    }
+    for(k in 702:1000){
+      testData3[[j]][[i]]$MBF[k] <- testData3[[j]][[i]]$totalMiles[k] - testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Lower[k] <- testData3[[j]][[i]]$totalMiles[k-1]
+      testData3[[j]][[i]]$Upper[k] <- testData3[[j]][[i]]$totalMiles[k]
+    }
+  }
+}
+
+source("simpleMPLP.R")
+MPLPResults <- simpMPLPMCMC(testData3[[1]], 20000, burnin = 5000)
+
+MPLPResults$DIC
+MPLPResults$PD
+
+print(lambda)
+
+plot(as.mcmc(MPLPResults$draws[,3]))
+plot(as.mcmc(MPLPResults$draws[,4]))
+plot(as.mcmc(MPLPResults$draws[,5]))
+plot(as.mcmc(MPLPResults$draws[,6]))
+plot(as.mcmc(MPLPResults$draws[,7]))
+
+
 
