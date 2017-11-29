@@ -247,11 +247,11 @@ for(i in 1:26){
   DICResults[i,4] <- simpPLPResults[[i]]$DIC
   DICResults[i,5] <- simpMPLPResults[[i]]$DIC
   
-  DICResults[i,1] <- ExpoResults[[i]]$DIC
-  DICResults[i,2] <- WeibullResults[[i]]$DIC
-  DICResults[i,3] <- BAOWeiResults[[i]]$DIC
-  DICResults[i,4] <- PLPResults[[i]]$DIC
-  DICResults[i,5] <- MPLPResults[[i]]$DIC
+  DICResults[i,6] <- ExpoResults[[i]]$DIC
+  DICResults[i,7] <- WeibullResults[[i]]$DIC
+  DICResults[i,8] <- BAOWeiResults[[i]]$DIC
+  DICResults[i,9] <- PLPResults[[i]]$DIC
+  DICResults[i,10] <- MPLPResults[[i]]$DIC
 }
 
 print(DICResults)
