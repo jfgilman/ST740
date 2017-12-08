@@ -46,10 +46,10 @@ logPLPInterval <- function(L, U, shape, scale){
 
 
 
-simpPLP <- function(data, samples = 40000, shapePriorA = .001,
+simpPLP <- function(data, samples = 100000, shapePriorA = .001,
                     shapePriorB = .001, hyperT1A = 3, hyperT1B = 3, hyperT2A = 3, hyperT2B = 3,
                     theta1Start = 1, theta2Start = 1, shapeStart = 1, tuningA = 1,
-                    tuningS = 1, burnin = 20000, thin = 10, lamPriorA = .001, lamPriorB = .001){
+                    tuningS = 1, burnin = 75000, thin = 10, lamPriorA = .001, lamPriorB = .001){
   
   
   # matrix for keeping MCMC draws for each parameter

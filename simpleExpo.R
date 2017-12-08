@@ -1,9 +1,9 @@
 
-simpExpoMCMC <- function(data, samples = 40000, shapePriorA = .001,
+simpExpoMCMC <- function(data, samples = 100000, shapePriorA = .001,
                      shapePriorB = .001, lamPriorA = .001, lamPriorB = .001,
                      theta1PriorA = .001, theta1PriorB = .001, theta2PriorA = .001,
                      theta2PriorB = .001, theta1Start = 1, theta2Start = 1, tuning = 1,
-                     burnin = 20000, thin = 10){
+                     burnin = 75000, thin = 10){
   
   # matrix for keeping MCMC draws for each parameter
   lam_draws <- rep(0, samples)
