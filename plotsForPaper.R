@@ -95,9 +95,9 @@ wF.inv <- function(u,lam,beta){
 }
 
 #################################################################################################################
-n <- 1500
+n <- 4000
 # choose vehicle type
-vNum <- 1
+vNum <- 2
 
 simFailureCounts <- matrix(0, ncol = 3, nrow = n)
 sim140Count <- matrix(0, ncol = 3, nrow = n)
@@ -172,17 +172,24 @@ abline(v = true140Count[2], col = 2)
 hist(sim140Count[,3], breaks = 50)
 abline(v = true140Count[3], col = 2)
 
-boxplot(sim140Count[,1],sim140Count[,2],sim140Count[,3])
-segments(.6, true140Count[1], 1.4, true140Count[1], col = 2)
-segments(1.6, true140Count[2], 2.4, true140Count[2], col = 2)
-segments(2.6, true140Count[3], 3.4, true140Count[3], col = 2)
+boxplot(sim140Count[,1],sim140Count[,2],sim140Count[,3],
+        main = "Posterior Predictive Simulation Weibull",
+        ylab = "Failure Counts Under 140 Miles",
+        xlab = "Phase", 
+        names = c("One", "Two", "Three"),
+        ylim = c(0, 130))
+legend("topright", legend=c("Observed Value"),
+       col=c("red"), lty=2, lwd=2)
+segments(.6, true140Count[1], 1.4, true140Count[1], col = 2, lwd = 3, lty = 2)
+segments(1.6, true140Count[2], 2.4, true140Count[2], col = 2, lwd = 3, lty = 2)
+segments(2.6, true140Count[3], 3.4, true140Count[3], col = 2, lwd = 3, lty = 2)
 
 
 #################################################################################################################
 
-n <- 1500
+n <- 4000
 # choose vehicle type
-vNum <- 1
+vNum <- 2
 
 simFailureCounts <- matrix(0, ncol = 3, nrow = n)
 sim140Count <- matrix(0, ncol = 3, nrow = n)
@@ -257,7 +264,28 @@ abline(v = true140Count[2], col = 2)
 hist(sim140Count[,3], breaks = 50)
 abline(v = true140Count[3], col = 2)
 
-boxplot(sim140Count[,1],sim140Count[,2],sim140Count[,3])
-segments(.6, true140Count[1], 1.4, true140Count[1], col = 2)
-segments(1.6, true140Count[2], 2.4, true140Count[2], col = 2)
-segments(2.6, true140Count[3], 3.4, true140Count[3], col = 2)
+boxplot(sim140Count[,1],sim140Count[,2],sim140Count[,3],
+        main = "Posterior Predictive Simulation Exponential",
+        ylab = "Failure Counts Under 140 Miles",
+        xlab = "Phase", 
+        names = c("One", "Two", "Three"),
+        ylim = c(0, 130))
+legend("topright", legend=c("Observed Value"),
+       col=c("red"), lty=2, lwd=2)
+segments(.6, true140Count[1], 1.4, true140Count[1], col = 2, lwd = 3, lty = 2)
+segments(1.6, true140Count[2], 2.4, true140Count[2], col = 2, lwd = 3, lty = 2)
+segments(2.6, true140Count[3], 3.4, true140Count[3], col = 2, lwd = 3, lty = 2)
+
+
+
+#################################################################################################################
+
+
+# left out 17 because it made the plot ugly...
+plot(density(WeibullResults[[1]]$draws[,3]), ylim = c(0,23), xlim = c(0,0.6), 
+     main = "Posterior Plots of Shape Parameter", xlab = "")
+for(i in c(2:16, 18:20)){
+  lines(density(WeibullResults[[i]]$draws[,3]))
+}
+
+
