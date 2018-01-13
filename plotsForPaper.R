@@ -281,6 +281,9 @@ segments(2.6, true140Count[3], 3.4, true140Count[3], col = 2, lwd = 3, lty = 2)
 #################################################################################################################
 
 
+load("RBAOWeiResults.RData")
+load("RWeibullResults.RData")
+
 # left out 17 because it made the plot ugly...
 plot(density(WeibullResults[[1]]$draws[,3]), ylim = c(0,23), xlim = c(0,0.6), 
      main = "Posterior Plots of Shape Parameter", xlab = "")
@@ -289,3 +292,29 @@ for(i in c(2:16, 18:20)){
 }
 
 
+plot(density(BAOWeiResults[[1]]$draws[,4]), ylim = c(0,3.5), xlim = c(0,3),
+     main = "Posterior Plots of CAP Parameters P2", xlab = "")
+for(i in c(2:4, 6:20)){
+  lines(density(BAOWeiResults[[i]]$draws[,4]))
+}
+
+plot(density(BAOWeiResults[[1]]$draws[,5]), ylim = c(0,3.5), xlim = c(0,3),
+     main = "Posterior Plots of CAP Parameters P3", xlab = "")
+for(i in c(2:4, 6:16, 18:20)){
+  lines(density(BAOWeiResults[[i]]$draws[,5]))
+}
+
+
+
+
+plot(density(WeibullResults[[1]]$draws[,4]), ylim = c(0,3.5), xlim = c(0,3),
+     main = "Posterior Plots of CAP Parameters P2", xlab = "")
+for(i in 2:20){
+  lines(density(WeibullResults[[i]]$draws[,4]))
+}
+
+plot(density(WeibullResults[[1]]$draws[,5]), ylim = c(0,3.5), xlim = c(0,3),
+     main = "Posterior Plots of CAP Parameters P3", xlab = "")
+for(i in 2:20){
+  lines(density(WeibullResults[[i]]$draws[,5]))
+}
