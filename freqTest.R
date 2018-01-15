@@ -28,7 +28,7 @@ dpois(0, lambda = (m3*(3/(80^1)))) + dpois(1, lambda = (m3*(3/(80^1)))) + dpois(
 1 - dpois(0, lambda = (m3*(3/(140^1)))) - dpois(1, lambda = (m3*(3/(140^1)))) - dpois(2, lambda = (m3*(3/(140^1)))) - dpois(3, lambda = (m3*(3/(140^1))))
 
 
-freqExpTest <- function(aFails = 0, cRate = 3/(80^1), pRate = 3/(140^1), startM = 5){
+freqExpTest <- function(aFails = 0, cRate = 60/(1000^.3), pRate = 55/(5000^.3), startM = 5){
   prob1 <- 1
   miles <- startM - 5
   while(prob1 > 0.1){
