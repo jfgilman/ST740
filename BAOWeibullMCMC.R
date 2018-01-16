@@ -22,7 +22,7 @@ logWeibullSum <- function(x, shape, scale){
   return(d)
 }
 
-BAOWMCMC <- function(data, samples = 50000, shapePriorA = .001,
+BAOWMCMC <- function(data, samples = 70000, shapePriorA = .001,
                         shapePriorB = .001, HyperG1 = .001, HyperG2 = .001,
                         hyperA1 = .001, hyperA2 = .001, hyperT1A = 3,
                         hyperT1B = 3, hyperT2A = 3, hyperT2B = 3,

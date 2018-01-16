@@ -304,10 +304,10 @@ assuranceTest <- function(postD, vehNum = 1, n = 1, allowedFails = 0,
   running <- T
   while(running){
     
-    if(miles %% 500 == 0){
+    if(miles %% 100 == 0){
       numeratorP <- 0
       denominatorP <- 0
-      for(j in 1:1500){
+      for(j in 1:3500){
         val <- 0
         for(i in 1:20){
           val <- val + (postD[[i]]$draws[j,4]*postD[[i]]$draws[j,5]*postD[[i]]$draws[j,vehNum + 5]*miles)^postD[[i]]$draws[j,3]
@@ -336,7 +336,7 @@ assuranceTest <- function(postD, vehNum = 1, n = 1, allowedFails = 0,
     
     numeratorC <- 0
     denominatorC <- 0
-    for(j in 1:1500){
+    for(j in 1:3500){
       val1 <- 0
       for(i in 1:20){
         val1 <- val1 + (postD[[i]]$draws[j,4]*postD[[i]]$draws[j,5]*postD[[i]]$draws[j,vehNum + 5]*miles)^postD[[i]]$draws[j,3]
@@ -363,15 +363,16 @@ assuranceTest <- function(postD, vehNum = 1, n = 1, allowedFails = 0,
     if(numeratorC/denominatorC < conRisk){
       numeratorP <- 0
       denominatorP <- 0
-      for(j in 1:1500){
+      for(j in 1:3500){
         val2 <- 0
         for(i in 1:20){
-          val2 <- val2 + (postD[[i]]$draws[j,4]*postD[[i]]$draws[j,5]*postD[[i]]$draws[j,vehNum + 5]*miles)^postD[[i]]$draws[j,3]
+          # val2 <- val2 + (postD[[i]]$draws[j,4]*postD[[i]]$draws[j,5]*postD[[i]]$draws[j,vehNum + 5]*miles)^postD[[i]]$draws[j,3]
+          val2 <- val2 + (postD[[i]]$draws[j,4]*postD[[i]]$draws[j,5]*postD[[i]]$draws[j,vehNum + 5]*10000)^postD[[i]]$draws[j,3]
         }
-        rateParm <- 1/rateParm
+
         amount <- 0
         for(k in 0:allowedFails){
-          amount <- amount + 1 - (exp(-val1) * val1^k)/factorial(k)
+          amount <- amount + 1 - (exp(-val2) * val2^k)/factorial(k)
         }
         tval2 <- 0
         for(i in 1:20){
@@ -393,23 +394,28 @@ assuranceTest <- function(postD, vehNum = 1, n = 1, allowedFails = 0,
     }
   }
   print("Final test miles")
+  print("Consumer risk alpha")
+  print(numeratorC/denominatorC)
+  print("Producer risk")
+  print(numeratorP/denominatorP)
+  
   return(miles)
 }
 
-load("RBAOWeiResults.RData")
+load("RBAOWeiResults2.RData")
 
 assuranceTest(BAOWeiResults, vehNum = 5, CfailLim = 60, PfailLim = 55, allowedFails = 2,
               mileStart = 10, increment = 10, Cmiles = 1000, Pmiles = 1000)
 
 
-assuranceTest(BAOWeiResults, vehNum = 5, CfailLim = 140, PfailLim = 115, allowedFails = 2,
-              mileStart = 100, increment = 10, Cmiles = 5000, Pmiles = 5000)
+assuranceTest(BAOWeiResults, vehNum = 5, CfailLim = 125, PfailLim = 110, allowedFails = 20,
+              mileStart = 5, increment = 10, Cmiles = 5000, Pmiles = 5000)
 
 fails1 <- c()
 
 vehNum <- 5
 
-for(j in 1:1500){
+for(j in 1:3500){
   val <- 0
   for(i in 1:20){
     val <- val + (BAOWeiResults[[i]]$draws[j,4]*BAOWeiResults[[i]]$draws[j,5]*BAOWeiResults[[i]]$draws[j,vehNum + 5]*5000)^BAOWeiResults[[i]]$draws[j,3]
@@ -422,10 +428,10 @@ hist(fails1)
 
 fails2 <- c()
 
-for(j in 1:1500){
+for(j in 1:3500){
   val <- 0
   for(i in 1:20){
-    val <- val + (BAOWeiResults[[i]]$draws[j,4]*BAOWeiResults[[i]]$draws[j,5]*BAOWeiResults[[i]]$draws[j,vehNum + 5]*4800)^BAOWeiResults[[i]]$draws[j,3]
+    val <- val + (BAOWeiResults[[i]]$draws[j,4]*BAOWeiResults[[i]]$draws[j,5]*BAOWeiResults[[i]]$draws[j,vehNum + 5]*5000)^BAOWeiResults[[i]]$draws[j,3]
   }
   fails2[j] <- val
 }
